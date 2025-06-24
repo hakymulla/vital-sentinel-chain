@@ -1,4 +1,4 @@
-
+import { useState } from 'react';
 import { useHealthMonitoring } from '@/hooks/useHealthMonitoring';
 import { VitalCard } from '@/components/VitalCard';
 import { HealthChart } from '@/components/HealthChart';
@@ -7,9 +7,11 @@ import { DeviceStatus } from '@/components/DeviceStatus';
 import { AnomalyPanel } from '@/components/AnomalyPanel';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Zap, Network } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Shield, Zap, Network, Database } from 'lucide-react';
 
 const Index = () => {
+  const [useStarkNet, setUseStarkNet] = useState(false);
   const {
     currentVitals,
     vitalsHistory,
@@ -17,8 +19,10 @@ const Index = () => {
     alerts,
     connectedDevices,
     acknowledgeAlert,
-    resolveAlert
-  } = useHealthMonitoring();
+    resolveAlert,
+    starknetLoading,
+    starknetError
+  } = useHealthMonitoring(useStarkNet);
 
   const getVitalStatus = (type: 'heart' | 'oxygen' | 'temperature', value: number) => {
     switch (type) {
@@ -55,6 +59,16 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-4">
+              <Button
+                onClick={() => setUseStarkNet(!useStarkNet)}
+                variant={useStarkNet ? "default" : "outline"}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Database className="w-4 h-4" />
+                {useStarkNet ? 'StarkNet Live' : 'Demo Mode'}
+              </Button>
+              
               <Badge className="bg-green-600/20 text-green-400 border-green-600/30">
                 <Network className="w-3 h-3 mr-1" />
                 StarkNet Connected
@@ -65,6 +79,26 @@ const Index = () => {
               </Badge>
             </div>
           </div>
+          
+          {useStarkNet && (
+            <div className="mt-3 flex items-center gap-2">
+              {starknetLoading && (
+                <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">
+                  Loading StarkNet data...
+                </Badge>
+              )}
+              {starknetError && (
+                <Badge variant="outline" className="text-red-400 border-red-400/30">
+                  StarkNet Error: {starknetError}
+                </Badge>
+              )}
+              {!starknetLoading && !starknetError && (
+                <Badge variant="outline" className="text-green-400 border-green-400/30">
+                  Connected to Contract: 0x0505...3ddd51
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -88,7 +122,9 @@ const Index = () => {
 
         {/* Current Vitals */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Live Health Vitals</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            {useStarkNet ? 'Live Health Vitals from StarkNet' : 'Simulated Health Vitals'}
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {currentVitals && (
               <>

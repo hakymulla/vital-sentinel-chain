@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { HealthVitals, AnomalyDetection, EmergencyAlert, WearableDevice } from '@/types/health';
+import { useStarkNetHealth } from './useStarkNetHealth';
 
 // Simulated ML anomaly detection
 const detectAnomalies = (vitals: HealthVitals): AnomalyDetection[] => {
@@ -45,17 +45,25 @@ const detectAnomalies = (vitals: HealthVitals): AnomalyDetection[] => {
   return anomalies;
 };
 
-export const useHealthMonitoring = () => {
+export const useHealthMonitoring = (useStarkNet: boolean = false) => {
   const [currentVitals, setCurrentVitals] = useState<HealthVitals | null>(null);
   const [vitalsHistory, setVitalsHistory] = useState<HealthVitals[]>([]);
   const [anomalies, setAnomalies] = useState<AnomalyDetection[]>([]);
   const [alerts, setAlerts] = useState<EmergencyAlert[]>([]);
   const [connectedDevices, setConnectedDevices] = useState<WearableDevice[]>([
     {
+      id: 'starknet_contract',
+      name: 'StarkNet Health Contract',
+      type: 'medical_device',
+      connected: true,
+      batteryLevel: 100,
+      lastSync: Date.now() - 30000
+    },
+    {
       id: 'apple_watch_1',
       name: 'Apple Watch Series 9',
       type: 'smartwatch',
-      connected: true,
+      connected: !useStarkNet,
       batteryLevel: 85,
       lastSync: Date.now() - 30000
     },
@@ -63,14 +71,50 @@ export const useHealthMonitoring = () => {
       id: 'fitbit_1',
       name: 'Fitbit Charge 5',
       type: 'fitness_tracker',
-      connected: true,
+      connected: !useStarkNet,
       batteryLevel: 72,
       lastSync: Date.now() - 45000
     }
   ]);
 
-  // Simulate real-time health data
+  const { starknetVitals, isLoading: starknetLoading, error: starknetError } = useStarkNetHealth();
+
+  // Simulate real-time health data or use StarkNet data
   useEffect(() => {
+    if (useStarkNet && starknetVitals) {
+      // Use StarkNet data when available
+      setCurrentVitals(starknetVitals);
+      setVitalsHistory(prev => [...prev.slice(-50), starknetVitals]);
+      
+      // Run anomaly detection on StarkNet data
+      const detectedAnomalies = detectAnomalies(starknetVitals);
+      if (detectedAnomalies.length > 0) {
+        setAnomalies(prev => [...prev.slice(-20), ...detectedAnomalies]);
+        
+        // Create emergency alerts for critical anomalies
+        const criticalAnomalies = detectedAnomalies.filter(a => a.severity === 'critical');
+        if (criticalAnomalies.length > 0) {
+          const newAlert: EmergencyAlert = {
+            id: `alert_${Date.now()}`,
+            type: criticalAnomalies[0].type === 'heart_rate' ? 'cardiac_anomaly' : 
+                  criticalAnomalies[0].type === 'blood_oxygen' ? 'oxygen_crisis' : 'fever_spike',
+            severity: 'emergency',
+            vitals: starknetVitals,
+            timestamp: Date.now(),
+            status: 'active'
+          };
+          setAlerts(prev => [newAlert, ...prev.slice(0, 9)]);
+        }
+      }
+      return;
+    }
+
+    if (useStarkNet) {
+      // Don't generate simulated data when using StarkNet mode
+      return;
+    }
+
+    // Original simulated data logic
     const interval = setInterval(() => {
       const newVitals: HealthVitals = {
         heartRate: 65 + Math.random() * 30 + (Math.sin(Date.now() / 10000) * 10),
@@ -106,7 +150,7 @@ export const useHealthMonitoring = () => {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [useStarkNet, starknetVitals]);
 
   const acknowledgeAlert = (alertId: string) => {
     setAlerts(prev => prev.map(alert => 
@@ -127,6 +171,8 @@ export const useHealthMonitoring = () => {
     alerts,
     connectedDevices,
     acknowledgeAlert,
-    resolveAlert
+    resolveAlert,
+    starknetLoading,
+    starknetError
   };
 };
