@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { starknetService } from '@/services/starknet';
 import { HealthVitals } from '@/types/health';
 
-// Default test user - you can change this to connect with actual user wallets
-const DEFAULT_USER_FELT = '0x1234567890abcdef'; // Example felt252 user ID
+// Use a simple decimal user ID instead of hex
+const DEFAULT_USER_FELT = '1234567890'; // Simple decimal user ID
 
 export const useStarkNetHealth = () => {
   const [starknetVitals, setStarknetVitals] = useState<HealthVitals | null>(null);
@@ -28,13 +28,28 @@ export const useStarkNetHealth = () => {
       console.log('Successfully fetched StarkNet vitals:', healthVitals);
     } catch (err) {
       console.error('Failed to fetch StarkNet vitals:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch data from StarkNet');
+      
+      // More detailed error handling
+      let errorMessage = 'Failed to fetch data from StarkNet';
+      if (err instanceof Error) {
+        if (err.message.includes('Validate Unhandled')) {
+          errorMessage = 'Invalid user parameter format';
+        } else if (err.message.includes('Contract not found')) {
+          errorMessage = 'Contract not found on StarkNet';
+        } else if (err.message.includes('RPC')) {
+          errorMessage = 'StarkNet network connection failed';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Auto-fetch every 30 seconds
+  // Auto-fetch every 30 seconds when component mounts
   useEffect(() => {
     fetchStarkNetVitals();
     

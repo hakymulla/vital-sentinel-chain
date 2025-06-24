@@ -1,5 +1,5 @@
 
-import { Contract, RpcProvider, CallData } from 'starknet';
+import { Contract, RpcProvider, CallData, num } from 'starknet';
 
 const STARKNET_RPC_URL = 'https://starknet-sepolia.public.blastapi.io';
 const CONTRACT_ADDRESS = '0x05059db56546b5bcae28335752121f741d0e439aab471a751711e6c3923ddd51';
@@ -133,7 +133,21 @@ export class StarkNetHealthService {
   async getLatestVitals(userFelt: string) {
     try {
       console.log('Fetching latest vitals for user:', userFelt);
-      const result = await this.contract.get_latest_vitals(userFelt);
+      
+      // Convert the hex string to a proper felt252 format
+      let userParam;
+      if (userFelt.startsWith('0x')) {
+        // If it's already a hex string, convert it to decimal for felt252
+        userParam = num.toBigInt(userFelt).toString();
+      } else {
+        // If it's a decimal string, use it directly
+        userParam = userFelt;
+      }
+      
+      console.log('Using user parameter:', userParam);
+      
+      const result = await this.contract.call('get_latest_vitals', [userParam]);
+      console.log('Raw contract result:', result);
       
       return {
         date: result[0],
