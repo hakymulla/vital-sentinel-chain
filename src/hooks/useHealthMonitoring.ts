@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { HealthVitals, AnomalyDetection, EmergencyAlert, WearableDevice } from '@/types/health';
 import { useStarkNetHealth } from './useStarkNetHealth';
+import { healthNotificationService } from '@/services/healthNotification';
 
 // Simulated ML anomaly detection
 const detectAnomalies = (vitals: HealthVitals): AnomalyDetection[] => {
@@ -104,6 +105,17 @@ export const useHealthMonitoring = (useStarkNet: boolean = false) => {
             status: 'active'
           };
           setAlerts(prev => [newAlert, ...prev.slice(0, 9)]);
+          
+          // 🚨 AUTOMATIC NOTIFICATION TO HEALTH OFFICIALS
+          healthNotificationService.checkAndNotifyCriticalVitals(starknetVitals, 'starknet_user')
+            .then(notificationSent => {
+              if (notificationSent) {
+                console.log('🚨 Critical health alert sent to health officials');
+              }
+            })
+            .catch(error => {
+              console.error('Failed to send health notification:', error);
+            });
         }
       }
       return;
@@ -145,6 +157,17 @@ export const useHealthMonitoring = (useStarkNet: boolean = false) => {
             status: 'active'
           };
           setAlerts(prev => [newAlert, ...prev.slice(0, 9)]);
+          
+          // 🚨 AUTOMATIC NOTIFICATION TO HEALTH OFFICIALS
+          healthNotificationService.checkAndNotifyCriticalVitals(newVitals, 'simulated_user')
+            .then(notificationSent => {
+              if (notificationSent) {
+                console.log('🚨 Critical health alert sent to health officials');
+              }
+            })
+            .catch(error => {
+              console.error('Failed to send health notification:', error);
+            });
         }
       }
     }, 2000);

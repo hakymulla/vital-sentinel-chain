@@ -175,7 +175,6 @@ export class StarkNetHealthService {
 
     const result = await this.contract.get_latest_vitals(myCall.calldata);
 
-    console.log('Raw contract result:', result.distance_km);
     return {
         date: result.date,
         steps: Number(result.steps),
