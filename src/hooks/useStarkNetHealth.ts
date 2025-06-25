@@ -1,10 +1,13 @@
-
 import { useState, useEffect } from 'react';
 import { starknetService } from '@/services/starknet';
 import { HealthVitals } from '@/types/health';
 
 // Use a simple decimal user ID instead of hex
-const DEFAULT_USER_FELT = '1234567890'; // Simple decimal user ID
+const DEFAULT_USER_FELT = '0x123'; // Use the hex string that matches on-chain data
+// const DEFAULT_USER_FELT = `0x${BigInt(123).toString(16)}`; // safer normalization
+// const DEFAULT_USER_FELT = '0x0000000000000000000000000000000000000000000000000000000000000123';
+// const DEFAULT_USER_FELT = '291'; // decimal for 0x123still
+
 
 export const useStarkNetHealth = () => {
   const [starknetVitals, setStarknetVitals] = useState<HealthVitals | null>(null);

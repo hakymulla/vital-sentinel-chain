@@ -66,7 +66,7 @@ export const EmergencyAlert = ({ alert, onAcknowledge, onResolve }: EmergencyAle
         </div>
         <div>
           <span className="text-slate-400">Temperature</span>
-          <p className="text-white font-medium">{alert.vitals.temperature.toFixed(1)}°C</p>
+          <p className="text-white font-medium">{alert.vitals.temperature.toFixed(0)}°C</p>
         </div>
       </div>
 
